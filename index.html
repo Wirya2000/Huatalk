@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Hanzi Writer Demo</title>
+  <title>Hanzi Writer Step-by-Step</title>
   <style>
     body {
       font-family: sans-serif;
@@ -17,62 +16,70 @@
       height: 300px;
       margin-bottom: 20px;
     }
-    input {
-      font-size: 20px;
-      padding: 5px 10px;
-      text-align: center;
-      width: 80px;
-      margin-bottom: 10px;
-    }
-    button {
-      padding: 8px 16px;
+    input, button {
+      font-size: 18px;
       margin: 5px;
-      font-size: 16px;
+      padding: 6px 12px;
     }
   </style>
 </head>
 <body>
 
-  <h1>Hanzi Writer Interactive</h1>
+  <h1>Hanzi Stroke-by-Stroke</h1>
   <div>
     <input id="charInput" maxlength="1" value="好">
     <button onclick="loadCharacter()">Load</button>
-    <button onclick="startAnimation()">Play Again</button>
+    <button onclick="drawNextStroke()">Next Stroke</button>
   </div>
   <div id="writer"></div>
 
   <script src="https://unpkg.com/hanzi-writer@2.1.2/dist/hanzi-writer.min.js"></script>
   <script>
-    alert("");
-    let currentChar = '好';
     let writer = null;
+    let currentChar = '';
+    let strokeIndex = 0;
 
-    function loadCharacter() {
+    async function loadCharacter() {
       const newChar = document.getElementById('charInput').value.trim();
       if (!newChar || newChar === currentChar) return;
 
       currentChar = newChar;
+      strokeIndex = 0;
       document.getElementById('writer').innerHTML = '';
 
-      writer = HanziWriter.create('writer', currentChar, {
-        width: 300,
-        height: 300,
-        padding: 5,
-        strokeAnimationSpeed: 1,
-        delayBetweenStrokes: 100,
-        radicalColor: '#FF0000',
-        strokeColor: '#000',
+      try {
+        const charData = await HanziWriter.loadCharacterData(currentChar);
+
+        writer = HanziWriter.create('writer', currentChar, {
+          width: 300,
+          height: 300,
+          padding: 5,
+          strokeAnimationSpeed: 1,
+          radicalColor: '#FF0000',
+          strokeColor: '#000',
+          charData: charData,
+          showOutline: true,
+          showCharacter: false,
+        });
+
+        writer.hideCharacter();
+        writer.showOutline();
+      } catch (error) {
+        alert('Failed to load character data.');
+        console.error(error);
+      }
+    }
+
+    function drawNextStroke() {
+      if (!writer) return;
+
+      writer.drawStroke(strokeIndex).then(() => {
+        strokeIndex++;
+        if (strokeIndex >= writer.getStrokeCount()) {
+          alert('All strokes completed!');
+        }
       });
-
-      writer.animateCharacter();
     }
-
-    function startAnimation() {
-      if (writer) writer.animateCharacter();
-    }
-
-    // Initialize default character
-    window.onload = loadCharacter;
   </script>
 
 </body>
