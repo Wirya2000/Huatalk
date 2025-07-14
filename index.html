@@ -1,0 +1,78 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Hanzi Writer Demo</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 50px;
+    }
+    #writer {
+      width: 300px;
+      height: 300px;
+      margin-bottom: 20px;
+    }
+    input {
+      font-size: 20px;
+      padding: 5px 10px;
+      text-align: center;
+      width: 80px;
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 8px 16px;
+      margin: 5px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Hanzi Writer Interactive</h1>
+  <div>
+    <input id="charInput" maxlength="1" value="好">
+    <button onclick="loadCharacter()">Load</button>
+    <button onclick="startAnimation()">Play Again</button>
+  </div>
+  <div id="writer"></div>
+
+  <script src="https://unpkg.com/hanzi-writer@2.1.2/dist/hanzi-writer.min.js"></script>
+  <script>
+    let currentChar = '好';
+    let writer = null;
+
+    function loadCharacter() {
+      const newChar = document.getElementById('charInput').value.trim();
+      if (!newChar || newChar === currentChar) return;
+
+      currentChar = newChar;
+      document.getElementById('writer').innerHTML = '';
+
+      writer = HanziWriter.create('writer', currentChar, {
+        width: 300,
+        height: 300,
+        padding: 5,
+        strokeAnimationSpeed: 1,
+        delayBetweenStrokes: 100,
+        radicalColor: '#FF0000',
+        strokeColor: '#000',
+      });
+
+      writer.animateCharacter();
+    }
+
+    function startAnimation() {
+      if (writer) writer.animateCharacter();
+    }
+
+    // Initialize default character
+    window.onload = loadCharacter;
+  </script>
+
+</body>
+</html>
