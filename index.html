@@ -33,53 +33,38 @@
   </div>
   <div id="writer"></div>
 
-  <script src="https://unpkg.com/hanzi-writer@2.1.2/dist/hanzi-writer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
   <script>
-    let writer = null;
-    let currentChar = '';
-    let strokeIndex = 0;
+function renderFanningStrokes(target, strokes) {
+  var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.style.width = '75px';
+  svg.style.height = '75px';
+  svg.style.border = '1px solid #EEE'
+  svg.style.marginRight = '3px'
+  target.appendChild(svg);
+  var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
 
-    async function loadCharacter() {
-      const newChar = document.getElementById('charInput').value.trim();
-      if (!newChar || newChar === currentChar) return;
+  // set the transform property on the g element so the character renders at 75x75
+  var transformData = HanziWriter.getScalingTransform(75, 75);
+  group.setAttributeNS(null, 'transform', transformData.transform);
+  svg.appendChild(group);
 
-      currentChar = newChar;
-      strokeIndex = 0;
-      document.getElementById('writer').innerHTML = '';
+  strokes.forEach(function(strokePath) {
+    var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttributeNS(null, 'd', strokePath);
+    // style the character paths
+    path.style.fill = '#555';
+    group.appendChild(path);
+  });
+}
 
-      try {
-        const charData = await HanziWriter.loadCharacterData(currentChar);
-
-        writer = HanziWriter.create('writer', currentChar, {
-          width: 300,
-          height: 300,
-          padding: 5,
-          strokeAnimationSpeed: 1,
-          radicalColor: '#FF0000',
-          strokeColor: '#000',
-          charData: charData,
-          showOutline: true,
-          showCharacter: false,
-        });
-
-        writer.hideCharacter();
-        writer.showOutline();
-      } catch (error) {
-        alert('Failed to load character data.');
-        console.error(error);
-      }
-    }
-
-    function drawNextStroke() {
-      if (!writer) return;
-
-      writer.drawStroke(strokeIndex).then(() => {
-        strokeIndex++;
-        if (strokeIndex >= writer.getStrokeCount()) {
-          alert('All strokes completed!');
-        }
-      });
-    }
+HanziWriter.loadCharacterData('是').then(function(charData) {
+  var target = document.getElementById('target');
+  for (var i = 0; i < charData.strokes.length; i++) {
+    var strokesPortion = charData.strokes.slice(0, i + 1);
+    renderFanningStrokes(target, strokesPortion);
+  }
+});
   </script>
 
 </body>
