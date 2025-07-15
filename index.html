@@ -58,8 +58,8 @@ function renderFanningStrokes(target, strokes) {
     group.appendChild(path);
   });
 }
-
-HanziWriter.loadCharacterData('是').then(function(charData) {
+const char = document.getElementById('charInput').value;
+HanziWriter.loadCharacterData(char).then(function(charData) {
   var target = document.getElementById('target');
   for (var i = 0; i < charData.strokes.length; i++) {
     var strokesPortion = charData.strokes.slice(0, i + 1);
