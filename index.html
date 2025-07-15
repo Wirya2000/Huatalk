@@ -2,95 +2,91 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Hanzi Writer Step-by-Step</title>
+  <title>Hanzi Auto SVG Download</title>
   <style>
     body {
       font-family: sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin-top: 50px;
+      margin-top: 40px;
     }
-    #writer {
-      width: 300px;
-      height: 300px;
-      margin-bottom: 20px;
-    }
-    input, button {
-      font-size: 18px;
-      margin: 5px;
-      padding: 6px 12px;
+    svg {
+      border: 1px solid #EEE;
+      margin: 4px;
     }
   </style>
 </head>
 <body>
 
-  <h1>Hanzi Stroke-by-Stroke</h1>
-  <div>
-    <input id="charInput" maxlength="1" value="好">
-    <button onclick="loadCharacter()">Load</button>
-    <button onclick="drawNextStroke()">Next Stroke</button>
-  </div>
+  <h1>Auto Download Hanzi Stroke SVGs</h1>
+  <input id="charInput" maxlength="1" value="好">
+  <button onclick="loadCharacter()">Generate & Download</button>
   <div id="target"></div>
-      
 
-  <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5.0/dist/hanzi-writer.min.js"></script>
+
   <script>
-function renderFanningStrokesAndSave(strokes, index, char) {
-  const svgNS = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(svgNS, 'svg');
-  const size = 75;
-  const scale = size / 1024;
+    function renderAndDownloadSVG(strokes, index, char) {
+      const svgNS = 'http://www.w3.org/2000/svg';
+      const size = 75;
+      const scale = size / 1024;
 
-  svg.setAttribute('xmlns', svgNS);
-  svg.setAttribute('width', size.toString());
-  svg.setAttribute('height', size.toString());
-  svg.setAttribute('viewBox', '0 0 1024 1024');
-  svg.style.border = '1px solid #EEE';
-  svg.style.marginRight = '3px';
+      const svg = document.createElementNS(svgNS, 'svg');
+      svg.setAttribute('xmlns', svgNS);
+      svg.setAttribute('width', size);
+      svg.setAttribute('height', size);
+      svg.setAttribute('viewBox', '0 0 1024 1024');
 
-  const group = document.createElementNS(svgNS, 'g');
-  group.setAttribute('transform', `scale(${scale})`);
-  svg.appendChild(group);
+      const g = document.createElementNS(svgNS, 'g');
+      g.setAttribute('transform', `scale(${scale})`);
+      svg.appendChild(g);
 
-  strokes.forEach(strokePath => {
-    const path = document.createElementNS(svgNS, 'path');
-    path.setAttribute('d', strokePath);
-    path.setAttribute('fill', '#000');
-    group.appendChild(path);
-  });
+      strokes.forEach(strokePath => {
+        const path = document.createElementNS(svgNS, 'path');
+        path.setAttribute('d', strokePath);
+        path.setAttribute('fill', '#000');
+        g.appendChild(path);
+      });
 
-  // Append to DOM for preview
-  const target = document.getElementById('target');
-  target.appendChild(svg);
+      // Show preview
+      document.getElementById('target').appendChild(svg);
 
-  // Serialize and download
-  const serializer = new XMLSerializer();
-  const svgString = serializer.serializeToString(svg);
-  const blob = new Blob([svgString], { type: 'image/svg+xml' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${char}_stroke_${index + 1}.svg`;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-function loadCharacter() {
-  const char = document.getElementById('charInput').value.trim();
-  if (!char) return;
-  document.getElementById('target').innerHTML = '';
-
-  HanziWriter.loadCharacterData(char).then(function(charData) {
-    for (let i = 0; i < charData.strokes.length; i++) {
-      const strokesPortion = charData.strokes.slice(0, i + 1);
-      renderFanningStrokesAndSave(strokesPortion, i, char);
+      // Download
+      const serializer = new XMLSerializer();
+      const svgString = serializer.serializeToString(svg);
+      const blob = new Blob([svgString], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${char}_stroke_${index + 1}.svg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
-  });
-}
+
+    async function loadCharacter() {
+      const char = document.getElementById('charInput').value.trim();
+      const target = document.getElementById('target');
+      target.innerHTML = '';
+
+      if (!char) {
+        alert("Please enter a Hanzi character.");
+        return;
+      }
+
+      try {
+        const charData = await HanziWriter.loadCharacterData(char);
+        for (let i = 0; i < charData.strokes.length; i++) {
+          const strokes = charData.strokes.slice(0, i + 1);
+          renderAndDownloadSVG(strokes, i, char);
+        }
+      } catch (err) {
+        console.error('Failed to load character data:', err);
+        alert('Failed to load character data.');
+      }
+    }
   </script>
 
 </body>
