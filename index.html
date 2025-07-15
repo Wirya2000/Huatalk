@@ -32,70 +32,62 @@
   <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5.0/dist/hanzi-writer.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script>
-function renderFanningSVG(strokes, index, char) {
-      const svgNS = 'http://www.w3.org/2000/svg';
-      const svg = document.createElementNS(svgNS, 'svg');
-      svg.setAttribute('xmlns', svgNS);
-      svg.setAttribute('width', '75');
-      svg.setAttribute('height', '75');
-      svg.setAttribute('viewBox', '0 0 1024 1024');
+<script>
+function renderFanningStrokes(target, strokes, index) {
+  var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  svg.setAttribute('width', '75');
+  svg.setAttribute('height', '75');
+  svg.setAttribute('viewBox', '0 0 1024 1024');
+  svg.style.border = '1px solid #EEE';
+  svg.style.marginRight = '3px';
+  svg.style.marginBottom = '5px';
 
-      const group = document.createElementNS(svgNS, 'g');
-      const transformData = HanziWriter.getScalingTransform(75, 75);
-      group.setAttribute('transform', transformData.transform);
-      svg.appendChild(group);
+  var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  var transformData = HanziWriter.getScalingTransform(75, 75);
+  group.setAttribute('transform', transformData.transform);
+  svg.appendChild(group);
 
-      strokes.forEach(strokePath => {
-        const path = document.createElementNS(svgNS, 'path');
-        path.setAttribute('d', strokePath);
-        path.setAttribute('fill', '#555');
-        group.appendChild(path);
-      });
+  strokes.forEach(function(strokePath) {
+    var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', strokePath);
+    path.setAttribute('fill', '#555');
+    group.appendChild(path);
+  });
 
-      const serializer = new XMLSerializer();
-      return serializer.serializeToString(svg);
-    }
+  target.appendChild(svg);
 
-async function loadCharacter() {
+  // Serialize SVG to string and trigger download
+  const serializer = new XMLSerializer();
+  const svgString = serializer.serializeToString(svg);
+  const blob = new Blob([svgString], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `char_${index + 1}.svg`; // e.g. char_1.svg, char_2.svg ...
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url); // cleanup
+}
+
+function loadCharacter() {
   const char = document.getElementById('charInput').value.trim();
   if (!char) return;
 
-  const zip = new JSZip();
-  const target = document.getElementById('target');
-  target.innerHTML = '';
-
-  try {
-    const charData = await HanziWriter.loadCharacterData(char);
-    console.log("Loaded strokes:", charData.strokes);
-
-    if (!charData.strokes || charData.strokes.length === 0) {
-      alert("No stroke data found for this character.");
-      return;
-    }
+  HanziWriter.loadCharacterData(char).then(function(charData) {
+    const target = document.getElementById('target');
+    target.innerHTML = ''; // clear previous results
 
     for (let i = 0; i < charData.strokes.length; i++) {
       const strokesPortion = charData.strokes.slice(0, i + 1);
-      const svgContent = renderFanningSVG(strokesPortion, i, char);
-
-      const container = document.createElement('div');
-      container.innerHTML = svgContent;
-      target.appendChild(container);
-
-      zip.file(`${char}_step_${i + 1}.svg`, svgContent);
+      renderFanningStrokes(target, strokesPortion, i);
     }
-
-    const blob = await zip.generateAsync({ type: 'blob' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${char}_strokes.zip`;
-    a.click();
-    URL.revokeObjectURL(url);
-  } catch (err) {
-    alert('Error loading character data.');
-    console.error(err);
-  }
+  });
 }
+</script>
+
   </script>
 </body>
 </html>
