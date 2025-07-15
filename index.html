@@ -40,10 +40,10 @@
       svg.setAttribute('width', '75');
       svg.setAttribute('height', '75');
       svg.setAttribute('viewBox', '0 0 100 100');
-
+      svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');  // <<< Ini yang penting
+      
       var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      var transformData = HanziWriter.getScalingTransform(75, 75);
-      group.setAttributeNS(null, 'transform', `${transformData.transform} translate(10, 10)`);
+      group.setAttributeNS(null, 'transform', HanziWriter.getScalingTransform(100, 100).transform);
       svg.appendChild(group);
 
       strokes.forEach(function(strokePath) {
