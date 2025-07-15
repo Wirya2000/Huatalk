@@ -36,36 +36,61 @@
 
   <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
   <script>
-function renderFanningStrokes(target, strokes) {
-  var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.style.width = '75px';
-  svg.style.height = '75px';
-  svg.style.border = '1px solid #EEE'
-  svg.style.marginRight = '3px'
-  target.appendChild(svg);
-  var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+function renderFanningStrokesAndSave(strokes, index, char) {
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  const size = 75;
+  const scale = size / 1024;
 
-  // set the transform property on the g element so the character renders at 75x75
-  var transformData = HanziWriter.getScalingTransform(75, 75);
-  group.setAttributeNS(null, 'transform', transformData.transform);
+  svg.setAttribute('xmlns', svgNS);
+  svg.setAttribute('width', size.toString());
+  svg.setAttribute('height', size.toString());
+  svg.setAttribute('viewBox', '0 0 1024 1024');
+  svg.style.border = '1px solid #EEE';
+  svg.style.marginRight = '3px';
+
+  const group = document.createElementNS(svgNS, 'g');
+  group.setAttribute('transform', `scale(${scale})`);
   svg.appendChild(group);
 
-  strokes.forEach(function(strokePath) {
-    var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttributeNS(null, 'd', strokePath);
-    // style the character paths
-    path.style.fill = '#555';
+  strokes.forEach(strokePath => {
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('d', strokePath);
+    path.setAttribute('fill', '#000');
     group.appendChild(path);
   });
+
+  // Append to DOM for preview
+  const target = document.getElementById('target');
+  target.appendChild(svg);
+
+  // Serialize and download
+  const serializer = new XMLSerializer();
+  const svgString = serializer.serializeToString(svg);
+  const blob = new Blob([svgString], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${char}_stroke_${index + 1}.svg`;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
-const char = document.getElementById('charInput').value;
-HanziWriter.loadCharacterData(char).then(function(charData) {
-  var target = document.getElementById('target');
-  for (var i = 0; i < charData.strokes.length; i++) {
-    var strokesPortion = charData.strokes.slice(0, i + 1);
-    renderFanningStrokes(target, strokesPortion);
-  }
-});
+
+function loadCharacter() {
+  const char = document.getElementById('charInput').value.trim();
+  if (!char) return;
+  document.getElementById('target').innerHTML = '';
+
+  HanziWriter.loadCharacterData(char).then(function(charData) {
+    for (let i = 0; i < charData.strokes.length; i++) {
+      const strokesPortion = charData.strokes.slice(0, i + 1);
+      renderFanningStrokesAndSave(strokesPortion, i, char);
+    }
+  });
+}
   </script>
 
 </body>
