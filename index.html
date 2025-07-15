@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Auto SVG Stroke Export</title>
+  <title>Hanzi Stroke to ZIP</title>
   <style>
     body {
       font-family: sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin-top: 50px;
+      margin-top: 40px;
     }
     #target {
       display: flex;
@@ -24,13 +24,15 @@
 </head>
 <body>
 
-  <h1>Auto-Export Hanzi Stroke SVGs</h1>
+  <h1>Auto Zip Hanzi SVG Strokes</h1>
   <input id="charInput" maxlength="1" value="好">
+  <button onclick="loadCharacter()">Generate & Download ZIP</button>
   <div id="target"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5.0/dist/hanzi-writer.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script>
-    function renderFanningStrokes(target, strokes, index, char) {
+    function renderFanningSVG(strokes, index, char) {
       const svgNS = 'http://www.w3.org/2000/svg';
       const svg = document.createElementNS(svgNS, 'svg');
       svg.setAttribute('xmlns', svgNS);
@@ -50,39 +52,50 @@
         group.appendChild(path);
       });
 
-      target.appendChild(svg);
-
-      // Auto download the SVG
       const serializer = new XMLSerializer();
-      const svgString = serializer.serializeToString(svg);
-      const blob = new Blob([svgString], { type: 'image/svg+xml' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${char}_step_${index + 1}.svg`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      return serializer.serializeToString(svg);
     }
 
-    function loadCharacter() {
-      const char = document.getElementById('charInput').value.trim();
-      if (!char) return;
+    async function loadCharacter() {
+  const char = document.getElementById('charInput').value.trim();
+  if (!char) return;
 
-      HanziWriter.loadCharacterData(char).then(charData => {
-        const target = document.getElementById('target');
-        target.innerHTML = '';
+  const zip = new JSZip();
+  const target = document.getElementById('target');
+  target.innerHTML = '';
 
-        for (let i = 0; i < charData.strokes.length; i++) {
-          const strokesPortion = charData.strokes.slice(0, i + 1);
-          renderFanningStrokes(target, strokesPortion, i, char);
-        }
-      });
+  try {
+    const charData = await HanziWriter.loadCharacterData(char);
+    console.log("Loaded strokes:", charData.strokes);
+
+    if (!charData.strokes || charData.strokes.length === 0) {
+      alert("No stroke data found for this character.");
+      return;
     }
 
-    // AUTO RUN ON PAGE LOAD
-    window.onload = loadCharacter;
+    for (let i = 0; i < charData.strokes.length; i++) {
+      const strokesPortion = charData.strokes.slice(0, i + 1);
+      const svgContent = renderFanningSVG(strokesPortion, i, char);
+
+      const container = document.createElement('div');
+      container.innerHTML = svgContent;
+      target.appendChild(container);
+
+      zip.file(`${char}_step_${i + 1}.svg`, svgContent);
+    }
+
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${char}_strokes.zip`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert('Error loading character data.');
+    console.error(err);
+  }
+}
   </script>
 </body>
 </html>
