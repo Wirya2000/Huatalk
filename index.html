@@ -2,90 +2,82 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Hanzi Auto SVG Download</title>
+  <title>Hanzi Writer Step-by-Step</title>
   <style>
     body {
       font-family: sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin-top: 40px;
+      margin-top: 50px;
     }
-    svg {
-      border: 1px solid #EEE;
-      margin: 4px;
+    #writer {
+      width: 300px;
+      height: 300px;
+      margin-bottom: 20px;
+    }
+    input, button {
+      font-size: 18px;
+      margin: 5px;
+      padding: 6px 12px;
     }
   </style>
 </head>
 <body>
 
-  <h1>Auto Download Hanzi Stroke SVGs</h1>
-  <input id="charInput" maxlength="1" value="好">
-  <button onclick="loadCharacter()">Generate & Download</button>
+  <h1>Hanzi Stroke-by-Stroke</h1>
+  <div>
+    <input id="charInput" maxlength="1" value="好">
+    <button onclick="loadCharacter()">Download All Steps</button>
+  </div>
   <div id="target"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5.0/dist/hanzi-writer.min.js"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
   <script>
-    function renderAndDownloadSVG(strokes, index, char) {
-      const svgNS = 'http://www.w3.org/2000/svg';
-      const size = 75;
+    function renderFanningStrokes(strokes, index, char) {
+      var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      svg.setAttribute('width', '75');
+      svg.setAttribute('height', '75');
+      svg.setAttribute('viewBox', '0 0 100 100');
 
-      const svg = document.createElementNS(svgNS, 'svg');
-      svg.setAttribute('xmlns', svgNS);
-      svg.setAttribute('width', size);
-      svg.setAttribute('height', size);
-      svg.setAttribute('viewBox', '0 0 1024 1024');
-
-      const group = document.createElementNS(svgNS, 'g');
-      const transformData = HanziWriter.getScalingTransform(size, size); // ✅ FIX
-      group.setAttribute('transform', transformData.transform);
+      var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      var transformData = HanziWriter.getScalingTransform(75, 75);
+      group.setAttributeNS(null, 'transform', transformData.transform);
       svg.appendChild(group);
 
-      strokes.forEach(strokePath => {
-        const path = document.createElementNS(svgNS, 'path');
-        path.setAttribute('d', strokePath);
-        path.setAttribute('fill', '#000');
+      strokes.forEach(function(strokePath) {
+        var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttributeNS(null, 'd', strokePath);
+        path.style.fill = '#000';
         group.appendChild(path);
       });
 
-      // Preview
-      document.getElementById('target').appendChild(svg);
-
-      // Serialize & Download
+      // Convert SVG to data URL and trigger download
       const serializer = new XMLSerializer();
-      const svgString = serializer.serializeToString(svg);
-      const blob = new Blob([svgString], { type: 'image/svg+xml' });
-      const url = URL.createObjectURL(blob);
+      const svgBlob = new Blob([serializer.serializeToString(svg)], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(svgBlob);
+
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${char}_stroke_${index + 1}.svg`;
+      a.download = `hanzi-${char}-step-${index + 1}.svg`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(url); // Clean up
     }
 
-    async function loadCharacter() {
+    function loadCharacter() {
       const char = document.getElementById('charInput').value.trim();
-      const target = document.getElementById('target');
-      target.innerHTML = '';
+      if (!char) return alert("Masukkan 1 huruf Hanzi.");
+      document.getElementById('target').innerHTML = ''; // Clear
 
-      if (!char) {
-        alert("Please enter a Hanzi character.");
-        return;
-      }
-
-      try {
-        const charData = await HanziWriter.loadCharacterData(char);
+      HanziWriter.loadCharacterData(char).then(function(charData) {
         for (let i = 0; i < charData.strokes.length; i++) {
-          const strokes = charData.strokes.slice(0, i + 1);
-          renderAndDownloadSVG(strokes, i, char);
+          const strokesPortion = charData.strokes.slice(0, i + 1);
+          renderFanningStrokes(strokesPortion, i, char);
         }
-      } catch (err) {
-        console.error('Failed to load character data:', err);
-        alert('Failed to load character data.');
-      }
+      });
     }
   </script>
 
