@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Hanzi Writer Step-by-Step</title>
+  <title>Auto SVG Stroke Export</title>
   <style>
     body {
       font-family: sans-serif;
@@ -11,62 +11,78 @@
       align-items: center;
       margin-top: 50px;
     }
-    #writer {
-      width: 300px;
-      height: 300px;
-      margin-bottom: 20px;
+    #target {
+      display: flex;
+      flex-wrap: wrap;
+      margin-top: 20px;
     }
-    input, button {
-      font-size: 18px;
-      margin: 5px;
-      padding: 6px 12px;
+    svg {
+      border: 1px solid #EEE;
+      margin: 4px;
     }
   </style>
 </head>
 <body>
 
-  <h1>Hanzi Stroke-by-Stroke</h1>
-  <div>
-    <input id="charInput" maxlength="1" value="好">
-    <button onclick="loadCharacter()">Load</button>
-    <button onclick="drawNextStroke()">Next Stroke</button>
-  </div>
+  <h1>Auto-Export Hanzi Stroke SVGs</h1>
+  <input id="charInput" maxlength="1" value="好">
   <div id="target"></div>
-      
 
   <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
   <script>
-function renderFanningStrokes(target, strokes) {
-  var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.style.width = '75px';
-  svg.style.height = '75px';
-  svg.style.border = '1px solid #EEE'
-  svg.style.marginRight = '3px'
-  target.appendChild(svg);
-  var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    function renderFanningStrokes(target, strokes, index, char) {
+      const svgNS = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(svgNS, 'svg');
+      svg.setAttribute('xmlns', svgNS);
+      svg.setAttribute('width', '75');
+      svg.setAttribute('height', '75');
+      svg.setAttribute('viewBox', '0 0 1024 1024');
 
-  // set the transform property on the g element so the character renders at 75x75
-  var transformData = HanziWriter.getScalingTransform(75, 75);
-  group.setAttributeNS(null, 'transform', transformData.transform);
-  svg.appendChild(group);
+      const group = document.createElementNS(svgNS, 'g');
+      const transformData = HanziWriter.getScalingTransform(75, 75);
+      group.setAttribute('transform', transformData.transform);
+      svg.appendChild(group);
 
-  strokes.forEach(function(strokePath) {
-    var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttributeNS(null, 'd', strokePath);
-    // style the character paths
-    path.style.fill = '#555';
-    group.appendChild(path);
-  });
-}
-const char = document.getElementById('charInput').value;
-HanziWriter.loadCharacterData(char).then(function(charData) {
-  var target = document.getElementById('target');
-  for (var i = 0; i < charData.strokes.length; i++) {
-    var strokesPortion = charData.strokes.slice(0, i + 1);
-    renderFanningStrokes(target, strokesPortion);
-  }
-});
+      strokes.forEach(strokePath => {
+        const path = document.createElementNS(svgNS, 'path');
+        path.setAttribute('d', strokePath);
+        path.setAttribute('fill', '#555');
+        group.appendChild(path);
+      });
+
+      target.appendChild(svg);
+
+      // Auto download the SVG
+      const serializer = new XMLSerializer();
+      const svgString = serializer.serializeToString(svg);
+      const blob = new Blob([svgString], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${char}_step_${index + 1}.svg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function loadCharacter() {
+      const char = document.getElementById('charInput').value.trim();
+      if (!char) return;
+
+      HanziWriter.loadCharacterData(char).then(charData => {
+        const target = document.getElementById('target');
+        target.innerHTML = '';
+
+        for (let i = 0; i < charData.strokes.length; i++) {
+          const strokesPortion = charData.strokes.slice(0, i + 1);
+          renderFanningStrokes(target, strokesPortion, i, char);
+        }
+      });
+    }
+
+    // AUTO RUN ON PAGE LOAD
+    window.onload = loadCharacter;
   </script>
-
 </body>
 </html>
