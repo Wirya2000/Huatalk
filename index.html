@@ -32,31 +32,29 @@
   <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5.0/dist/hanzi-writer.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script>
-function renderFanningSVG(strokes) {
-  const svgNS = 'http://www.w3.org/2000/svg';
-  const size = 75;
-  const scale = size / 1024;
+function renderFanningSVG(strokes, index, char) {
+      const svgNS = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(svgNS, 'svg');
+      svg.setAttribute('xmlns', svgNS);
+      svg.setAttribute('width', '75');
+      svg.setAttribute('height', '75');
+      svg.setAttribute('viewBox', '0 0 1024 1024');
 
-  const svg = document.createElementNS(svgNS, 'svg');
-  svg.setAttribute('xmlns', svgNS);
-  svg.setAttribute('width', size.toString());
-  svg.setAttribute('height', size.toString());
-  svg.setAttribute('viewBox', '0 0 1024 1024');
+      const group = document.createElementNS(svgNS, 'g');
+      const transformData = HanziWriter.getScalingTransform(75, 75);
+      group.setAttribute('transform', transformData.transform);
+      svg.appendChild(group);
 
-  const group = document.createElementNS(svgNS, 'g');
-  group.setAttribute('transform', `scale(${scale})`);
-  svg.appendChild(group);
+      strokes.forEach(strokePath => {
+        const path = document.createElementNS(svgNS, 'path');
+        path.setAttribute('d', strokePath);
+        path.setAttribute('fill', '#555');
+        group.appendChild(path);
+      });
 
-  strokes.forEach(stroke => {
-    const path = document.createElementNS(svgNS, 'path');
-    path.setAttribute('d', stroke);
-    path.setAttribute('fill', '#000');
-    group.appendChild(path);
-  });
-
-  const serializer = new XMLSerializer();
-  return serializer.serializeToString(svg);
-}
+      const serializer = new XMLSerializer();
+      return serializer.serializeToString(svg);
+    }
 
 async function loadCharacter() {
   const char = document.getElementById('charInput').value.trim();
