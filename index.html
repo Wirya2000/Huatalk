@@ -30,7 +30,6 @@
     function renderAndDownloadSVG(strokes, index, char) {
       const svgNS = 'http://www.w3.org/2000/svg';
       const size = 75;
-      const scale = size / 1024;
 
       const svg = document.createElementNS(svgNS, 'svg');
       svg.setAttribute('xmlns', svgNS);
@@ -38,21 +37,22 @@
       svg.setAttribute('height', size);
       svg.setAttribute('viewBox', '0 0 1024 1024');
 
-      const g = document.createElementNS(svgNS, 'g');
-      g.setAttribute('transform', `scale(${scale})`);
-      svg.appendChild(g);
+      const group = document.createElementNS(svgNS, 'g');
+      const transformData = HanziWriter.getScalingTransform(size, size); // ✅ FIX
+      group.setAttribute('transform', transformData.transform);
+      svg.appendChild(group);
 
       strokes.forEach(strokePath => {
         const path = document.createElementNS(svgNS, 'path');
         path.setAttribute('d', strokePath);
         path.setAttribute('fill', '#000');
-        g.appendChild(path);
+        group.appendChild(path);
       });
 
-      // Show preview
+      // Preview
       document.getElementById('target').appendChild(svg);
 
-      // Download
+      // Serialize & Download
       const serializer = new XMLSerializer();
       const svgString = serializer.serializeToString(svg);
       const blob = new Blob([svgString], { type: 'image/svg+xml' });
