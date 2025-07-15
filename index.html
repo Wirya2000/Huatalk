@@ -43,7 +43,7 @@
 
       var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       var transformData = HanziWriter.getScalingTransform(75, 75);
-      group.setAttributeNS(null, 'transform', transformData.transform);
+      group.setAttributeNS(null, 'transform', `${transformData.transform} translate(10, 10)`);
       svg.appendChild(group);
 
       strokes.forEach(function(strokePath) {
