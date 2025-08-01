@@ -34,51 +34,36 @@
 
   <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
   <script>
-    function renderFanningStrokes(strokes, index, char) {
+    function renderFanningStrokes(target, strokes) {
       var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-      svg.setAttribute('width', '75');
-      svg.setAttribute('height', '75');
-      svg.setAttribute('viewBox', '0 0 100 100');
-      svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');  // <<< Ini yang penting
-      
+      svg.style.width = '75px';
+      svg.style.height = '75px';
+      svg.style.border = '1px solid #EEE'
+      svg.style.marginRight = '3px'
+      target.appendChild(svg);
       var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      group.setAttributeNS(null, 'transform', HanziWriter.getScalingTransform(100, 100).transform);
+    
+      // set the transform property on the g element so the character renders at 75x75
+      var transformData = HanziWriter.getScalingTransform(75, 75);
+      group.setAttributeNS(null, 'transform', transformData.transform);
       svg.appendChild(group);
-
+    
       strokes.forEach(function(strokePath) {
         var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttributeNS(null, 'd', strokePath);
-        path.style.fill = '#000';
+        // style the character paths
+        path.style.fill = '#555';
         group.appendChild(path);
       });
-
-      // Convert SVG to data URL and trigger download
-      const serializer = new XMLSerializer();
-      const svgBlob = new Blob([serializer.serializeToString(svg)], { type: 'image/svg+xml' });
-      const url = URL.createObjectURL(svgBlob);
-
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `hanzi-${char}-step-${index + 1}.svg`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url); // Clean up
     }
-
-    function loadCharacter() {
-      const char = document.getElementById('charInput').value.trim();
-      if (!char) return alert("Masukkan 1 huruf Hanzi.");
-      document.getElementById('target').innerHTML = ''; // Clear
-
-      HanziWriter.loadCharacterData(char).then(function(charData) {
-        for (let i = 0; i < charData.strokes.length; i++) {
-          const strokesPortion = charData.strokes.slice(0, i + 1);
-          renderFanningStrokes(strokesPortion, i, char);
-        }
-      });
-    }
+    
+    HanziWriter.loadCharacterData('是').then(function(charData) {
+      var target = document.getElementById('target');
+      for (var i = 0; i < charData.strokes.length; i++) {
+        var strokesPortion = charData.strokes.slice(0, i + 1);
+        renderFanningStrokes(target, strokesPortion);
+      }
+    });
   </script>
 
 </body>
